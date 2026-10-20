@@ -65,6 +65,10 @@ def uptime_of(pid: int) -> str:
     return " ".join(p for p in (f"{d}d" if d else "", f"{h}h" if h else "", f"{m}m") if p)
 
 
+def systemd_unit_installed() -> bool:
+    return subprocess.run(["systemctl", "cat", "kirocrew.service"], capture_output=True).returncode == 0
+
+
 def dot_icon(color: str) -> QIcon:
     pm = QPixmap(64, 64)
     pm.fill(Qt.GlobalColor.transparent)
@@ -154,8 +158,7 @@ class TrayWidget:
         if self.running or self.busy:
             return
         # Prefer the systemd unit when installed; otherwise run a detached foreground gateway.
-        unit = subprocess.run(["systemctl", "cat", "kirocrew.service"], capture_output=True).returncode == 0
-        if unit and shutil.which("pkexec"):
+        if systemd_unit_installed() and shutil.which("pkexec"):
             cmd = ["pkexec", "systemctl", "start", "kirocrew.service"]
         else:
             cmd = [KIROCREW, "gateway", "--no-open"]
@@ -184,10 +187,25 @@ class TrayWidget:
         r = QMessageBox.question(None, "Kiro Crew", "Stop the gateway?\n\nThis interrupts running Kiro sessions.")
         if r != QMessageBox.StandardButton.Yes:
             return
+        # The unit has Restart=always, so signalling the process (what `kirocrew stop` does for
+        # a non-root user) just makes systemd bring it back. Only an explicit `systemctl stop`
+        # is exempt from Restart=, and that needs privilege, hence pkexec.
+        if systemd_unit_installed() and shutil.which("pkexec"):
+            program, args = "pkexec", ["systemctl", "stop", "kirocrew.service"]
+        else:
+            program, args = KIROCREW, ["stop"]
         p = QProcess()
-        p.setProgram(KIROCREW)
-        p.setArguments(["stop"])
-        p.finished.connect(lambda *_: self._wait_for(False, "Gateway stopped.", "Gateway still answering after stop."))
+        p.setProgram(program)
+        p.setArguments(args)
+
+        def done(code, _status):
+            if code:
+                self.busy = False
+                self.notify(f"Stop failed (exit {code}); the gateway is still running.")
+                self.refresh()
+            else:
+                self._wait_for(False, "Gateway stopped.", "Gateway still answering after stop.")
+        p.finished.connect(done)
         self._stop_proc = p
         self.busy = True
         p.start()
