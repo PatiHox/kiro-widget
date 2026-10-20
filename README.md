@@ -1,17 +1,16 @@
 # kiro-widget
 
-Tray icon + small window for the Kiro Crew gateway (PyQt6, wraps the `kirocrew` CLI).
+Tray-only control panel for the Kiro Crew gateway; click the tray dot for the menu (PyQt6, wraps the `kirocrew` CLI).
 
 - Live status (green/red/amber tray dot): port probe on 5476 (`KIROCREW_PORT` to override), PID and uptime
-- Start / Stop / Restart (stop and restart ask first; they interrupt running Kiro sessions)
-- Open dashboard (uses `kirocrew token`; the token URL is never displayed)
-- Logs, live log follow, Doctor, Cron jobs, Subagents
+- Start / Stop (Stop asks first; it interrupts running Kiro sessions)
+- "Beam me up" opens the dashboard (uses `kirocrew token`; the token URL is never displayed)
+- Logs, Doctor, Cron jobs, Subagents (output opens in a small popup)
 
 Start is `pkexec systemctl start kirocrew.service` when that unit exists, else a detached `kirocrew gateway --no-open`.
 
-    python3 kiro_widget.py            # window + tray
-    python3 kiro_widget.py --hidden   # tray only
+    python3 kiro_widget.py
 
 Start menu: `cp kiro-widget.desktop ~/.local/share/applications/` (the Exec path is absolute; edit it if you move the repo).
 
-Autostart: `cp kiro-widget.desktop ~/.config/autostart/` (add `--hidden` to Exec for tray-only).
+Autostart: `cp kiro-widget.desktop ~/.config/autostart/`.
