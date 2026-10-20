@@ -7,9 +7,11 @@ pkgdesc='System tray widget to start, stop and inspect the Kiro Crew (kirocrew) 
 arch=('x86_64')
 url='https://github.com/PatiHox/kiro-widget'
 license=('MIT')
-depends=('gcc-libs' 'glibc' 'kdialog' 'libnotify' 'polkit' 'xdg-utils')
+depends=('gcc-libs' 'glibc' 'zenity' 'libnotify' 'polkit' 'xdg-utils')
 makedepends=('cargo' 'git')
-optdepends=('systemd: manage the kirocrew system service')
+optdepends=('kdialog: native dialogs on KDE Plasma'
+            'gnome-shell-extension-appindicator: tray icon on GNOME'
+            'systemd: manage the kirocrew system service')
 provides=('kiro-widget')
 conflicts=('kiro-widget')
 options=('!lto')

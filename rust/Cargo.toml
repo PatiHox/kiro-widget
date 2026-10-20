@@ -20,11 +20,12 @@ maintainer = "Yevhenii Terentiev <123j123t@gmail.com>"
 copyright = "2026, Yevhenii Terentiev <123j123t@gmail.com>"
 section = "utils"
 priority = "optional"
-depends = "$auto, kdialog, libnotify-bin, pkexec | policykit-1, xdg-utils"
+depends = "$auto, zenity | kdialog, libnotify-bin, pkexec | policykit-1, xdg-utils"
 extended-description = """\
 Tray icon showing whether the Kiro Crew gateway is running, with menu \
 entries to start, stop, open the dashboard and view logs, doctor, cron \
-jobs and subagents. Requires Kiro Crew (kirocrew) to be installed separately."""
+jobs and subagents. Works on KDE, GNOME (AppIndicator extension), Xfce and \
+Cinnamon. Requires Kiro Crew (kirocrew) to be installed separately."""
 assets = [
     ["target/release/kiro-widget-rs", "usr/bin/", "755"],
     ["../packaging/kiro-widget-rs.desktop", "usr/share/applications/", "644"],
@@ -43,7 +44,7 @@ assets = [
 ]
 
 [package.metadata.generate-rpm.requires]
-kdialog = "*"
+zenity = "*"
 libnotify = "*"
 polkit = "*"
 xdg-utils = "*"

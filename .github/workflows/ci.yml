@@ -25,6 +25,7 @@ jobs:
           workspaces: rust
       - run: cargo fmt --check
       - run: cargo clippy --locked --release -- -D warnings
+      - run: cargo test --locked --release
       - run: cargo build --locked --release
       - uses: taiki-e/install-action@v2
         with:

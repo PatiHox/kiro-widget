@@ -5,12 +5,27 @@ Tray widget for the Kiro Crew gateway (Rust, [`ksni`](https://crates.io/crates/k
 - Live status (green = running, red = stopped, amber = working): port probe on 5476 (`KIROCREW_PORT` to override), PID and uptime
 - **Start** / **Stop** (Stop asks first; it interrupts running Kiro sessions)
 - **Go aboard** opens the dashboard (uses `kirocrew token`; the token URL is never displayed)
-- Logs, Doctor, Cron jobs, Subagents (output opens in a `kdialog` text box)
+- Logs, Doctor, Cron jobs, Subagents (output opens in a dialog)
 
 Start and Stop go through `pkexec systemctl start|stop kirocrew.service` when that unit exists (the unit has `Restart=always`, so only an explicit `systemctl stop` keeps it down), else a detached `kirocrew gateway --no-open` / `kirocrew stop`.
 Only one instance runs at a time (lock in `$XDG_RUNTIME_DIR`).
 
-Needs `kdialog`, `notify-send` (libnotify), `xdg-open`, `pkexec` (polkit) and a StatusNotifier tray (KDE, or GNOME with an extension).
+Needs `zenity` or `kdialog` (dialogs), `notify-send` (libnotify), `xdg-open`, `pkexec` (polkit, with an authentication agent running) and a StatusNotifier tray host (see below).
+
+## Supported desktops
+
+The tray is a StatusNotifierItem over the D-Bus session bus (`dbus-broker` and `dbus-daemon` both work), so X11 and Wayland behave the same. What differs is the tray host:
+
+| Desktop | Tray host | Dialogs | Status |
+|---|---|---|---|
+| KDE Plasma | built in | `kdialog` | tested (Wayland) |
+| GNOME | [AppIndicator extension](https://extensions.gnome.org/extension/615/appindicator-support/) (`gnome-shell-extension-appindicator`); preinstalled on Ubuntu | `zenity` | not tested |
+| Xfce 4.16+ | built-in "Status Tray Plugin" | `zenity` | not tested |
+| Cinnamon | `xapp` (`xapp-sn-watcher`) + the XApp Status applet | `zenity` | not tested |
+
+If the tray host starts after the widget (common at login), the widget waits and registers when it appears. If none shows up within 30 seconds it sends a desktop-specific hint. Bare X11 window managers with an XEmbed-only tray need a proxy such as `snixembed`.
+
+What is verified: the no-host and late-host cases and the dialog command shapes were exercised on a private D-Bus session, and dialog selection has unit tests. The GNOME, Xfce and Cinnamon rows have not been run on those desktops.
 
 ## Build and run
 
