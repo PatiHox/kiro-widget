@@ -24,3 +24,10 @@ Autostart: `cp kiro-widget.desktop ~/.config/autostart/`.
 
 Measured on this machine, idle: Python/PyQt6 ~72 MB resident, Rust ~6 MB. Use one or the other, not both (two tray icons).
 `rust/kiro-widget-rs.desktop` is the matching start-menu entry (absolute path to the release binary).
+
+## Arch package
+
+    cd packaging/arch && makepkg -f      # builds from committed HEAD
+    sudo pacman -U kiro-widget-*.pkg.tar.zst
+
+Installs `/usr/bin/kiro-widget-rs` and a start-menu entry. For autostart: `cp /usr/share/applications/kiro-widget-rs.desktop ~/.config/autostart/`.

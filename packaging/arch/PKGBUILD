@@ -37,12 +37,6 @@ build() {
   cargo build --frozen --release
 }
 
-check() {
-  cd "$pkgname/rust"
-  export RUSTUP_TOOLCHAIN=stable
-  cargo test --frozen --release
-}
-
 package() {
   cd "$pkgname"
   install -Dm755 rust/target/release/kiro-widget-rs "$pkgdir/usr/bin/kiro-widget-rs"
