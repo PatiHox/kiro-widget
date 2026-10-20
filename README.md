@@ -4,7 +4,7 @@ Tray-only control panel for the Kiro Crew gateway; click the tray dot for the me
 
 - Live status (green/red/amber tray dot): port probe on 5476 (`KIROCREW_PORT` to override), PID and uptime
 - Start / Stop (Stop asks first; it interrupts running Kiro sessions)
-- "Open the bridge" opens the dashboard (uses `kirocrew token`; the token URL is never displayed)
+- "Go aboard" opens the dashboard (uses `kirocrew token`; the token URL is never displayed)
 - Logs, Doctor, Cron jobs, Subagents (output opens in a small popup)
 
 Start is `pkexec systemctl start kirocrew.service` when that unit exists, else a detached `kirocrew gateway --no-open`.

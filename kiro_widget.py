@@ -101,7 +101,7 @@ class TrayWidget:
         self.a_status.setEnabled(False)
         self.menu.addAction(self.a_status)
         self.menu.addSeparator()
-        self.a_dash = self.menu.addAction("Open the bridge", self.open_dashboard)
+        self.a_dash = self.menu.addAction("Go aboard", self.open_dashboard)
         self.a_start = self.menu.addAction("Start", self.start)
         self.a_stop = self.menu.addAction("Stop", self.stop)
         self.menu.addSeparator()
