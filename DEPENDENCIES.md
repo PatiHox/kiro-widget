@@ -1,6 +1,6 @@
 # Installing the system dependencies
 
-What kiro-widget needs at runtime, and what you need to build it, as install commands for the common package managers. See [Requirements](../README.md#requirements) in the README for what each tool is used for.
+What kiro-widget needs at runtime, and what you need to build it, as install commands for the common package managers. See [Requirements](README.md#requirements) in the README for what each tool is used for.
 
 The `.deb`, `.rpm` and Arch packages pull in the runtime tools themselves. For a source build, or for what no package covers, install them with your package manager. In each block the first line is the runtime tools; the second is the build tools, needed only to build from source.
 
@@ -45,7 +45,7 @@ By package name:
 | zypper | `kdialog` | `gnome-shell-extension-appindicator` |
 | Nix | `kdePackages.kdialog` | `gnomeExtensions.appindicator` |
 
-After installing the GNOME extension, enable it in the Extensions app and log out and back in. Ubuntu preinstalls it. Tray hosts for Xfce and Cinnamon are listed under [Supported desktops](../README.md#supported-desktops).
+After installing the GNOME extension, enable it in the Extensions app and log out and back in. Ubuntu preinstalls it. Tray hosts for Xfce and Cinnamon are listed under [Supported desktops](README.md#supported-desktops).
 
 ## Rust
 

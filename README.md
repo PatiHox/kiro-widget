@@ -32,7 +32,7 @@ The distro packages below pull in the dependencies they can express: `zenity` (o
 - A C linker (`gcc` or `cc`).
 - Optional, to build packages: [`cargo-deb`](https://crates.io/crates/cargo-deb), [`cargo-generate-rpm`](https://crates.io/crates/cargo-generate-rpm), or `makepkg` (`base-devel`) on Arch.
 
-Install commands for apt, dnf, pacman, zypper and NixOS (runtime tools, build tools, optional extras, and Rust via rustup) are in [docs/dependencies.md](docs/dependencies.md).
+Install commands for apt, dnf, pacman, zypper and NixOS (runtime tools, build tools, optional extras, and Rust via rustup) are in [DEPENDENCIES.md](DEPENDENCIES.md).
 
 ## Installation
 
@@ -62,7 +62,7 @@ Download the `.deb` (attached to a GitHub release when a `v*` tag is pushed, and
 
 ### From source
 
-Install the [build tools and Rust](docs/dependencies.md) first.
+Install the [build tools and Rust](DEPENDENCIES.md) first.
 
     git clone https://github.com/PatiHox/kiro-widget.git
     cd kiro-widget/rust
