@@ -12,4 +12,6 @@ Start is `pkexec systemctl start kirocrew.service` when that unit exists, else a
     python3 kiro_widget.py            # window + tray
     python3 kiro_widget.py --hidden   # tray only
 
+Start menu: `cp kiro-widget.desktop ~/.local/share/applications/` (the Exec path is absolute; edit it if you move the repo).
+
 Autostart: `cp kiro-widget.desktop ~/.config/autostart/` (add `--hidden` to Exec for tray-only).
