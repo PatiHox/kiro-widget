@@ -6,7 +6,7 @@
 //! instead of a GUI toolkit, which keeps the binary and its memory footprint small.
 
 use std::env;
-use std::fs;
+use std::fs::{self, File, TryLockError};
 use std::net::{SocketAddr, TcpStream};
 use std::os::unix::process::CommandExt;
 use std::path::{Path, PathBuf};
@@ -361,7 +361,24 @@ impl ksni::Tray for Tray {
     }
 }
 
+/// Hold an exclusive lock for the process lifetime so autostart plus a manual launch can't
+/// leave two tray icons. The lock dies with the process, so a crash never leaves it stale.
+fn single_instance() -> Option<File> {
+    let dir = env::var_os("XDG_RUNTIME_DIR").map(PathBuf::from).unwrap_or_else(env::temp_dir);
+    let file = File::options().create(true).write(true).truncate(false).open(dir.join("kiro-widget.lock")).ok()?;
+    match file.try_lock() {
+        Ok(()) => Some(file),
+        Err(TryLockError::WouldBlock) => None,
+        // Can't lock (odd filesystem): better a possible duplicate than no widget.
+        Err(TryLockError::Error(_)) => Some(file),
+    }
+}
+
 fn main() {
+    let Some(_lock) = single_instance() else {
+        eprintln!("kiro-widget is already running.");
+        return;
+    };
     let tray = Tray { running: false, busy: false, status: "Checking…".into() };
     let handle = match tray.spawn() {
         Ok(h) => h,

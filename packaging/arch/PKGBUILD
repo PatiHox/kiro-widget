@@ -42,4 +42,7 @@ package() {
   install -Dm755 rust/target/release/kiro-widget-rs "$pkgdir/usr/bin/kiro-widget-rs"
   install -Dm644 packaging/arch/kiro-widget-rs.desktop \
     "$pkgdir/usr/share/applications/kiro-widget-rs.desktop"
+  # Launch at login for every user; a same-named file in ~/.config/autostart overrides it.
+  install -Dm644 packaging/arch/kiro-widget-rs.desktop \
+    "$pkgdir/etc/xdg/autostart/kiro-widget-rs.desktop"
 }
