@@ -14,3 +14,13 @@ Start is `pkexec systemctl start kirocrew.service` when that unit exists, else a
 Start menu: `cp kiro-widget.desktop ~/.local/share/applications/` (the Exec path is absolute; edit it if you move the repo).
 
 Autostart: `cp kiro-widget.desktop ~/.config/autostart/`.
+
+## Rust port
+
+`rust/` is a feature-for-feature port using [`ksni`](https://crates.io/crates/ksni) (StatusNotifierItem over D-Bus), with `kdialog` for the confirm/output dialogs and `notify-send` for notifications. No GUI toolkit.
+
+    cd rust && cargo build --release
+    ./target/release/kiro-widget-rs
+
+Measured on this machine, idle: Python/PyQt6 ~72 MB resident, Rust ~6 MB. Use one or the other, not both (two tray icons).
+`rust/kiro-widget-rs.desktop` is the matching start-menu entry (absolute path to the release binary).

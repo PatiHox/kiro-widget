@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Kiro Crew Widget (Rust)
+Comment=Status and controls for the kirocrew gateway
+Exec=/home/patihox/projects/kiro-widget/rust/target/release/kiro-widget-rs
+Icon=utilities-system-monitor
+Categories=Utility;
+Terminal=false
