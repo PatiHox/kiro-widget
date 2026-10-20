@@ -12,6 +12,20 @@ Only one instance runs at a time (lock in `$XDG_RUNTIME_DIR`).
 
 Needs `zenity` or `kdialog` (dialogs), `notify-send` (libnotify), `xdg-open`, `pkexec` (polkit, with an authentication agent running) and a StatusNotifier tray host (see below).
 
+## How this relates to the official KiroCrew desktop app
+
+Kiro Crew ships its own desktop app (Electron; `.deb`, `.rpm` and AppImage on Linux, a `.dmg` on macOS). This widget is not a replacement for it. It is for the setup the app does not cover: the gateway running as a service (`kirocrew service install`, systemd) with the dashboard in a browser tab, and no Electron app installed.
+
+What the widget adds over the app:
+
+- A live status dot. The app's tray icon is static (Show, New Connection Window, Open Config File, Quit) and shows no gateway state.
+- Start and Stop for a systemd-managed gateway. The app adopts such a gateway but never stops or evicts it.
+- A small Rust binary instead of Electron, with an XDG autostart entry.
+
+If you use the desktop app, you do not need the widget. The app starts the gateway when it launches and stops it on quit, has the dashboard in its window and mints the token itself. Logs, cron jobs and subagents are dashboard features. Doctor is the CLI command `kirocrew doctor`.
+
+The widget is Linux-only (StatusNotifier over D-Bus, `systemctl`, `pkexec`, `/proc`). Kiro Crew itself supports macOS, but there the signed app covers the same ground, so there is no macOS port. Someone running only the launchd LaunchAgent (`kirocrew service install`) with no app would be the one case it leaves open.
+
 ## Supported desktops
 
 The tray is a StatusNotifierItem over the D-Bus session bus (`dbus-broker` and `dbus-daemon` both work), so X11 and Wayland behave the same. What differs is the tray host:
