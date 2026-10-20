@@ -1,15 +1,15 @@
-# Maintainer: patihox <123j123t@gmail.com>
+# Maintainer: Yevhenii Terentiev <123j123t@gmail.com>
 #
 # Builds from the local repository (this file lives in packaging/arch/), using the
 # committed HEAD. Commit your changes before running makepkg.
 
 pkgname=kiro-widget
-pkgver=0.1.0
+pkgver=r0.0000000
 pkgrel=1
 pkgdesc='System tray widget to start, stop and inspect the Kiro Crew (kirocrew) gateway'
 arch=('x86_64')
-url='https://github.com/kirodotdev/KiroCrew'
-license=('custom')
+url='https://github.com/PatiHox/kiro-widget'
+license=('MIT')
 depends=('gcc-libs' 'glibc' 'kdialog' 'libnotify' 'polkit' 'xdg-utils')
 makedepends=('cargo' 'git')
 optdepends=('systemd: manage the kirocrew system service')
@@ -19,9 +19,7 @@ sha256sums=('SKIP')
 
 pkgver() {
   cd "$pkgname"
-  local ver
-  ver=$(sed -n 's/^version = "\(.*\)"/\1/p' rust/Cargo.toml | head -1)
-  printf '%s.r%s.g%s' "$ver" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+  printf 'r%s.%s' "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
 }
 
 prepare() {
@@ -45,4 +43,5 @@ package() {
   # Launch at login for every user; a same-named file in ~/.config/autostart overrides it.
   install -Dm644 packaging/arch/kiro-widget-rs.desktop \
     "$pkgdir/etc/xdg/autostart/kiro-widget-rs.desktop"
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
 }

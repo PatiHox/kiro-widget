@@ -1,0 +1,46 @@
+# Maintainer: Yevhenii Terentiev <123j123t@gmail.com>
+
+pkgname=kiro-widget-git
+pkgver=r0.0000000
+pkgrel=1
+pkgdesc='System tray widget to start, stop and inspect the Kiro Crew (kirocrew) gateway'
+arch=('x86_64')
+url='https://github.com/PatiHox/kiro-widget'
+license=('MIT')
+depends=('gcc-libs' 'glibc' 'kdialog' 'libnotify' 'polkit' 'xdg-utils')
+makedepends=('cargo' 'git')
+optdepends=('systemd: manage the kirocrew system service')
+provides=('kiro-widget')
+conflicts=('kiro-widget')
+options=('!lto')
+source=("kiro-widget::git+$url.git")
+sha256sums=('SKIP')
+
+pkgver() {
+  cd kiro-widget
+  printf 'r%s.%s' "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+}
+
+prepare() {
+  cd kiro-widget/rust
+  export RUSTUP_TOOLCHAIN=stable
+  cargo fetch --locked --target "$(rustc -vV | sed -n 's/host: //p')"
+}
+
+build() {
+  cd kiro-widget/rust
+  export RUSTUP_TOOLCHAIN=stable
+  export CARGO_TARGET_DIR=target
+  cargo build --frozen --release
+}
+
+package() {
+  cd kiro-widget
+  install -Dm755 rust/target/release/kiro-widget-rs "$pkgdir/usr/bin/kiro-widget-rs"
+  install -Dm644 packaging/arch/kiro-widget-rs.desktop \
+    "$pkgdir/usr/share/applications/kiro-widget-rs.desktop"
+  # Launch at login for every user; a same-named file in ~/.config/autostart overrides it.
+  install -Dm644 packaging/arch/kiro-widget-rs.desktop \
+    "$pkgdir/etc/xdg/autostart/kiro-widget-rs.desktop"
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}

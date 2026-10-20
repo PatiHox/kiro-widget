@@ -19,7 +19,15 @@ Needs `kdialog`, `notify-send` (libnotify), `xdg-open`, `pkexec` (polkit) and a 
 
 ## Arch package
 
-    cd packaging/arch && makepkg -f      # builds from committed HEAD
+Local build from your checkout (committed `HEAD`):
+
+    cd packaging/arch && makepkg -f
     sudo pacman -U kiro-widget-*.pkg.tar.zst
 
+AUR recipe (`kiro-widget-git`, builds latest `main` from GitHub, no release versions) is in `packaging/aur/`.
+
 Installs `/usr/bin/kiro-widget-rs`, a start-menu entry, and `/etc/xdg/autostart/kiro-widget-rs.desktop` so it launches at login.
+
+## License
+
+MIT, see `LICENSE`.

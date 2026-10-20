@@ -6,3 +6,8 @@ packaging/arch/pkg/
 packaging/arch/kiro-widget/
 packaging/arch/*.pkg.tar.*
 packaging/arch/*.log
+packaging/aur/src/
+packaging/aur/pkg/
+packaging/aur/kiro-widget/
+packaging/aur/*.pkg.tar.*
+packaging/aur/*.log
