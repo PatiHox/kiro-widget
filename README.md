@@ -28,6 +28,16 @@ AUR recipe (`kiro-widget-git`, builds latest `main` from GitHub, no release vers
 
 Installs `/usr/bin/kiro-widget-rs`, a start-menu entry, and `/etc/xdg/autostart/kiro-widget-rs.desktop` so it launches at login.
 
+## Debian / Fedora packages
+
+`.deb` and `.rpm` are built from `rust/Cargo.toml` metadata with [`cargo-deb`](https://crates.io/crates/cargo-deb) and [`cargo-generate-rpm`](https://crates.io/crates/cargo-generate-rpm):
+
+    cd rust && cargo build --release
+    cargo deb --no-build          # target/debian/kiro-widget_*.deb
+    cargo generate-rpm            # target/generate-rpm/kiro-widget-*.rpm
+
+CI (`.github/workflows/ci.yml`) runs fmt, clippy, the build and both packagers on every push and PR and uploads the packages as artifacts. Pushing a `v*` tag also attaches them to a GitHub release. Dependabot (`.github/dependabot.yml`) opens weekly grouped updates for Cargo dependencies and GitHub Actions.
+
 ## License
 
 MIT, see `LICENSE`.

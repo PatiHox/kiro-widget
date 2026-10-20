@@ -30,7 +30,10 @@ const AMBER: [u8; 3] = [0xd2, 0x99, 0x22];
 static HANDLE: OnceLock<Handle<Tray>> = OnceLock::new();
 
 fn port() -> u16 {
-    env::var("KIROCREW_PORT").ok().and_then(|p| p.parse().ok()).unwrap_or(5476)
+    env::var("KIROCREW_PORT")
+        .ok()
+        .and_then(|p| p.parse().ok())
+        .unwrap_or(5476)
 }
 
 fn kirocrew() -> PathBuf {
@@ -59,12 +62,19 @@ fn port_open() -> bool {
 /// PID of the `kirocrew gateway` process, found by scanning /proc.
 fn gateway_pid() -> Option<u32> {
     for entry in fs::read_dir("/proc").ok()?.flatten() {
-        let Some(pid) = entry.file_name().to_str().and_then(|s| s.parse::<u32>().ok()) else {
+        let Some(pid) = entry
+            .file_name()
+            .to_str()
+            .and_then(|s| s.parse::<u32>().ok())
+        else {
             continue;
         };
-        let Ok(raw) = fs::read(entry.path().join("cmdline")) else { continue };
+        let Ok(raw) = fs::read(entry.path().join("cmdline")) else {
+            continue;
+        };
         let argv: Vec<&[u8]> = raw.split(|b| *b == 0).collect();
-        if argv.iter().take(3).any(|a| a.ends_with(b"kirocrew")) && argv.contains(&&b"gateway"[..]) {
+        if argv.iter().take(3).any(|a| a.ends_with(b"kirocrew")) && argv.contains(&&b"gateway"[..])
+        {
             return Some(pid);
         }
     }
@@ -74,8 +84,19 @@ fn gateway_pid() -> Option<u32> {
 fn uptime_of(pid: u32) -> String {
     let secs = (|| {
         let stat = fs::read_to_string(format!("/proc/{pid}/stat")).ok()?;
-        let start: f64 = stat.rsplit_once(')')?.1.split_whitespace().nth(19)?.parse().ok()?;
-        let boot: f64 = fs::read_to_string("/proc/uptime").ok()?.split_whitespace().next()?.parse().ok()?;
+        let start: f64 = stat
+            .rsplit_once(')')?
+            .1
+            .split_whitespace()
+            .nth(19)?
+            .parse()
+            .ok()?;
+        let boot: f64 = fs::read_to_string("/proc/uptime")
+            .ok()?
+            .split_whitespace()
+            .next()?
+            .parse()
+            .ok()?;
         Some((boot - start / CLK_TCK) as u64)
     })();
     let Some(secs) = secs else { return "?".into() };
@@ -102,7 +123,9 @@ fn unit_installed() -> bool {
 }
 
 fn notify(msg: &str) {
-    let _ = Command::new("notify-send").args(["-a", "Kiro Crew", "Kiro Crew", msg]).status();
+    let _ = Command::new("notify-send")
+        .args(["-a", "Kiro Crew", "Kiro Crew", msg])
+        .status();
 }
 
 fn update(f: impl FnOnce(&mut Tray)) {
@@ -172,7 +195,11 @@ fn start() {
             notify("Could not launch the gateway.");
             return;
         }
-        wait_for(true, "Gateway is up.", "Gateway did not come up within 30s. Check Logs / Doctor.");
+        wait_for(
+            true,
+            "Gateway is up.",
+            "Gateway did not come up within 30s. Check Logs / Doctor.",
+        );
     });
 }
 
@@ -182,7 +209,12 @@ fn stop() {
             return;
         }
         let confirmed = Command::new("kdialog")
-            .args(["--title", "Kiro Crew", "--yesno", "Stop the gateway?\n\nThis interrupts running Kiro sessions."])
+            .args([
+                "--title",
+                "Kiro Crew",
+                "--yesno",
+                "Stop the gateway?\n\nThis interrupts running Kiro sessions.",
+            ])
             .status()
             .map(|s| s.success())
             .unwrap_or(false);
@@ -202,14 +234,27 @@ fn stop() {
             c
         };
         update(|t| t.busy = true);
-        let result = cmd.stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null()).status();
+        let result = cmd
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status();
         match result {
-            Ok(s) if s.success() => wait_for(false, "Gateway stopped.", "Gateway still answering after stop."),
+            Ok(s) if s.success() => wait_for(
+                false,
+                "Gateway stopped.",
+                "Gateway still answering after stop.",
+            ),
             other => {
                 update(|t| t.busy = false);
                 refresh();
-                let code = other.ok().and_then(|s| s.code()).map_or("?".into(), |c| c.to_string());
-                notify(&format!("Stop failed (exit {code}); the gateway is still running."));
+                let code = other
+                    .ok()
+                    .and_then(|s| s.code())
+                    .map_or("?".into(), |c| c.to_string());
+                notify(&format!(
+                    "Stop failed (exit {code}); the gateway is still running."
+                ));
             }
         }
     });
@@ -230,7 +275,11 @@ fn open_dashboard() {
                     .map(String::from)
             })
             .unwrap_or(fallback);
-        let _ = Command::new("xdg-open").arg(url).stdout(Stdio::null()).stderr(Stdio::null()).status();
+        let _ = Command::new("xdg-open")
+            .arg(url)
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status();
     });
 }
 
@@ -254,8 +303,14 @@ fn show_cli(title: &'static str, args: &'static [&'static str]) {
         } else {
             text.push_str("Could not run kirocrew.\n");
         }
-        let dir = env::var_os("XDG_RUNTIME_DIR").map(PathBuf::from).unwrap_or_else(env::temp_dir);
-        let file = dir.join(format!("kiro-widget-{}-{}.txt", std::process::id(), title.replace(' ', "_")));
+        let dir = env::var_os("XDG_RUNTIME_DIR")
+            .map(PathBuf::from)
+            .unwrap_or_else(env::temp_dir);
+        let file = dir.join(format!(
+            "kiro-widget-{}-{}.txt",
+            std::process::id(),
+            title.replace(' ', "_")
+        ));
         if fs::write(&file, text).is_ok() {
             let _ = Command::new("kdialog")
                 .args(["--title", &format!("Kiro Crew · {title}"), "--textbox"])
@@ -285,7 +340,11 @@ impl Tray {
     }
 
     fn label(&self) -> String {
-        if self.busy { "Working…".into() } else { self.status.clone() }
+        if self.busy {
+            "Working…".into()
+        } else {
+            self.status.clone()
+        }
     }
 }
 
@@ -301,7 +360,11 @@ fn dot(color: [u8; 3]) -> ksni::Icon {
             data.extend_from_slice(&[alpha, color[0], color[1], color[2]]);
         }
     }
-    ksni::Icon { width: N, height: N, data }
+    ksni::Icon {
+        width: N,
+        height: N,
+        data,
+    }
 }
 
 fn item(label: &str, enabled: bool, activate: fn()) -> MenuItem<Tray> {
@@ -353,8 +416,12 @@ impl ksni::Tray for Tray {
             MenuItem::Separator,
             item("Logs", true, || show_cli("Logs", &["logs", "-n", "100"])),
             item("Doctor", true, || show_cli("Doctor", &["doctor"])),
-            item("Cron jobs", self.running, || show_cli("Cron jobs", &["cron", "list"])),
-            item("Subagents", self.running, || show_cli("Subagents", &["spawn", "list"])),
+            item("Cron jobs", self.running, || {
+                show_cli("Cron jobs", &["cron", "list"])
+            }),
+            item("Subagents", self.running, || {
+                show_cli("Subagents", &["spawn", "list"])
+            }),
             MenuItem::Separator,
             item("Quit widget", true, || std::process::exit(0)),
         ]
@@ -364,8 +431,15 @@ impl ksni::Tray for Tray {
 /// Hold an exclusive lock for the process lifetime so autostart plus a manual launch can't
 /// leave two tray icons. The lock dies with the process, so a crash never leaves it stale.
 fn single_instance() -> Option<File> {
-    let dir = env::var_os("XDG_RUNTIME_DIR").map(PathBuf::from).unwrap_or_else(env::temp_dir);
-    let file = File::options().create(true).write(true).truncate(false).open(dir.join("kiro-widget.lock")).ok()?;
+    let dir = env::var_os("XDG_RUNTIME_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(env::temp_dir);
+    let file = File::options()
+        .create(true)
+        .write(true)
+        .truncate(false)
+        .open(dir.join("kiro-widget.lock"))
+        .ok()?;
     match file.try_lock() {
         Ok(()) => Some(file),
         Err(TryLockError::WouldBlock) => None,
@@ -379,7 +453,11 @@ fn main() {
         eprintln!("kiro-widget is already running.");
         return;
     };
-    let tray = Tray { running: false, busy: false, status: "Checking…".into() };
+    let tray = Tray {
+        running: false,
+        busy: false,
+        status: "Checking…".into(),
+    };
     let handle = match tray.spawn() {
         Ok(h) => h,
         Err(e) => {

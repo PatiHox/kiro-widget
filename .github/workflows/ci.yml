@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: rust
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust
+      - run: cargo fmt --check
+      - run: cargo clippy --locked --release -- -D warnings
+      - run: cargo build --locked --release
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-deb,cargo-generate-rpm
+      - run: cargo deb --no-build
+      - run: cargo generate-rpm
+      - uses: actions/upload-artifact@v4
+        with:
+          name: packages
+          path: |
+            rust/target/debian/*.deb
+            rust/target/generate-rpm/*.rpm
+
+  # Tagging vX.Y.Z (optional) attaches the packages to a GitHub release.
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: packages
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            **/*.deb
+            **/*.rpm

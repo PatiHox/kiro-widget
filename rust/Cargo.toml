@@ -2,6 +2,48 @@
 name = "kiro-widget-rs"
 version = "0.1.0"
 edition = "2024"
+description = "System tray widget to start, stop and inspect the Kiro Crew (kirocrew) gateway"
+license = "MIT"
+repository = "https://github.com/PatiHox/kiro-widget"
+authors = ["Yevhenii Terentiev <123j123t@gmail.com>"]
+readme = "../README.md"
 
 [dependencies]
 ksni = { version = "0.3.7", features = ["blocking"] }
+
+[profile.release]
+strip = true
+
+[package.metadata.deb]
+name = "kiro-widget"
+maintainer = "Yevhenii Terentiev <123j123t@gmail.com>"
+copyright = "2026, Yevhenii Terentiev <123j123t@gmail.com>"
+section = "utils"
+priority = "optional"
+depends = "$auto, kdialog, libnotify-bin, pkexec | policykit-1, xdg-utils"
+extended-description = """\
+Tray icon showing whether the Kiro Crew gateway is running, with menu \
+entries to start, stop, open the dashboard and view logs, doctor, cron \
+jobs and subagents. Requires Kiro Crew (kirocrew) to be installed separately."""
+assets = [
+    ["target/release/kiro-widget-rs", "usr/bin/", "755"],
+    ["../packaging/kiro-widget-rs.desktop", "usr/share/applications/", "644"],
+    ["../packaging/kiro-widget-rs.desktop", "etc/xdg/autostart/", "644"],
+    ["../LICENSE", "usr/share/doc/kiro-widget/copyright", "644"],
+]
+
+[package.metadata.generate-rpm]
+name = "kiro-widget"
+summary = "System tray widget for the Kiro Crew gateway"
+assets = [
+    { source = "target/release/kiro-widget-rs", dest = "/usr/bin/kiro-widget-rs", mode = "755" },
+    { source = "../packaging/kiro-widget-rs.desktop", dest = "/usr/share/applications/kiro-widget-rs.desktop", mode = "644" },
+    { source = "../packaging/kiro-widget-rs.desktop", dest = "/etc/xdg/autostart/kiro-widget-rs.desktop", mode = "644", config = true },
+    { source = "../LICENSE", dest = "/usr/share/licenses/kiro-widget/LICENSE", mode = "644", doc = true },
+]
+
+[package.metadata.generate-rpm.requires]
+kdialog = "*"
+libnotify = "*"
+polkit = "*"
+xdg-utils = "*"
