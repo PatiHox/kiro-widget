@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Kiro Crew Widget
+Comment=Status and controls for the kirocrew gateway
+Exec=kiro-widget-rs
+Icon=utilities-system-monitor
+Categories=Utility;
+Terminal=false

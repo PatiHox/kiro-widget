@@ -1,0 +1,51 @@
+# Maintainer: patihox <123j123t@gmail.com>
+#
+# Builds from the local repository (this file lives in packaging/arch/), using the
+# committed HEAD. Commit your changes before running makepkg.
+
+pkgname=kiro-widget
+pkgver=0.1.0
+pkgrel=1
+pkgdesc='System tray widget to start, stop and inspect the Kiro Crew (kirocrew) gateway'
+arch=('x86_64')
+url='https://github.com/kirodotdev/KiroCrew'
+license=('custom')
+depends=('gcc-libs' 'glibc' 'kdialog' 'libnotify' 'polkit' 'xdg-utils')
+makedepends=('cargo' 'git')
+optdepends=('systemd: manage the kirocrew system service')
+options=('!lto')
+source=("$pkgname::git+file://${startdir}/../..")
+sha256sums=('SKIP')
+
+pkgver() {
+  cd "$pkgname"
+  local ver
+  ver=$(sed -n 's/^version = "\(.*\)"/\1/p' rust/Cargo.toml | head -1)
+  printf '%s.r%s.g%s' "$ver" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+}
+
+prepare() {
+  cd "$pkgname/rust"
+  export RUSTUP_TOOLCHAIN=stable
+  cargo fetch --locked --target "$(rustc -vV | sed -n 's/host: //p')"
+}
+
+build() {
+  cd "$pkgname/rust"
+  export RUSTUP_TOOLCHAIN=stable
+  export CARGO_TARGET_DIR=target
+  cargo build --frozen --release
+}
+
+check() {
+  cd "$pkgname/rust"
+  export RUSTUP_TOOLCHAIN=stable
+  cargo test --frozen --release
+}
+
+package() {
+  cd "$pkgname"
+  install -Dm755 rust/target/release/kiro-widget-rs "$pkgdir/usr/bin/kiro-widget-rs"
+  install -Dm644 packaging/arch/kiro-widget-rs.desktop \
+    "$pkgdir/usr/share/applications/kiro-widget-rs.desktop"
+}
