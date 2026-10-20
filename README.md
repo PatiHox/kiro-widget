@@ -1,8 +1,8 @@
 # kiro-widget
 
-Tray widget for the Kiro Crew gateway (Rust, [`ksni`](https://crates.io/crates/ksni) over D-Bus). Click the tray dot for the menu.
+Tray widget for the Kiro Crew gateway (Rust, [`ksni`](https://crates.io/crates/ksni) over D-Bus). Click the tray ghost for the menu.
 
-- Live status (green = running, red = stopped, amber = working): port probe on 5476 (`KIROCREW_PORT` to override), PID and uptime
+- Live status (the ghost is Kiro purple = running, amber = working, red with its eyes shut = stopped): port probe on 5476 (`KIROCREW_PORT` to override), PID and uptime
 - **Start** / **Stop** (Stop asks first; it interrupts running Kiro sessions)
 - **Go aboard** opens the dashboard (uses `kirocrew token`; the token URL is never displayed)
 - Logs, Doctor, Cron jobs, Subagents (output opens in a dialog)
@@ -56,3 +56,7 @@ CI (`.github/workflows/ci.yml`) runs fmt, clippy, the build and both packagers o
 ## License
 
 MIT, see `LICENSE`.
+
+## Credits
+
+The tray ghost (`rust/assets/ghost*.svg`, adapted) is the "ghost" icon from [Scarlab Icons](https://scarlab-icons.la-moore.ru) by Alex Moore (MIT), found on [SVG Repo](https://www.svgrepo.com/svg/508069/ghost). The notice is in `THIRD_PARTY_NOTICES.md`.

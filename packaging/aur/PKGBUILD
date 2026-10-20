@@ -45,4 +45,5 @@ package() {
   install -Dm644 packaging/kiro-widget-rs.desktop \
     "$pkgdir/etc/xdg/autostart/kiro-widget-rs.desktop"
   install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+  install -Dm644 THIRD_PARTY_NOTICES.md "$pkgdir/usr/share/licenses/$pkgname/THIRD_PARTY_NOTICES.md"
 }

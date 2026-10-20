@@ -10,6 +10,7 @@ readme = "../README.md"
 
 [dependencies]
 ksni = { version = "0.3.7", features = ["blocking"] }
+resvg = { version = "0.48.1", default-features = false }
 
 [profile.release]
 strip = true
@@ -31,6 +32,7 @@ assets = [
     ["../packaging/kiro-widget-rs.desktop", "usr/share/applications/", "644"],
     ["../packaging/kiro-widget-rs.desktop", "etc/xdg/autostart/", "644"],
     ["../LICENSE", "usr/share/doc/kiro-widget/copyright", "644"],
+    ["../THIRD_PARTY_NOTICES.md", "usr/share/doc/kiro-widget/THIRD_PARTY_NOTICES.md", "644"],
 ]
 
 [package.metadata.generate-rpm]
@@ -41,6 +43,7 @@ assets = [
     { source = "../packaging/kiro-widget-rs.desktop", dest = "/usr/share/applications/kiro-widget-rs.desktop", mode = "644" },
     { source = "../packaging/kiro-widget-rs.desktop", dest = "/etc/xdg/autostart/kiro-widget-rs.desktop", mode = "644", config = true },
     { source = "../LICENSE", dest = "/usr/share/licenses/kiro-widget/LICENSE", mode = "644", doc = true },
+    { source = "../THIRD_PARTY_NOTICES.md", dest = "/usr/share/licenses/kiro-widget/THIRD_PARTY_NOTICES.md", mode = "644", doc = true },
 ]
 
 [package.metadata.generate-rpm.requires]
