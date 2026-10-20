@@ -32,6 +32,53 @@ The distro packages below pull in the dependencies they can express: `zenity` (o
 - A C linker (`gcc` or `cc`).
 - Optional, to build packages: [`cargo-deb`](https://crates.io/crates/cargo-deb), [`cargo-generate-rpm`](https://crates.io/crates/cargo-generate-rpm), or `makepkg` (`base-devel`) on Arch.
 
+### Installing the system dependencies
+
+The `.deb`, `.rpm` and Arch packages pull in the runtime tools themselves. For a source build, or for what no package covers, install them with your package manager. The first line is the runtime tools; the second is the build tools, needed only to build from source.
+
+**Debian / Ubuntu**
+
+    sudo apt install zenity libnotify-bin xdg-utils pkexec
+    sudo apt install build-essential curl
+
+On a release without a `pkexec` package, install `policykit-1` instead.
+
+**Fedora**
+
+    sudo dnf install zenity libnotify xdg-utils polkit
+    sudo dnf install gcc curl
+
+**Arch Linux**
+
+    sudo pacman -S zenity libnotify xdg-utils polkit
+    sudo pacman -S base-devel curl
+
+**openSUSE**
+
+    sudo zypper install zenity libnotify-tools xdg-utils polkit
+    sudo zypper install gcc curl
+
+**NixOS** (`configuration.nix`; the `pkexec` that Nix installs is not setuid, so enable polkit through the module to get the wrapper)
+
+    security.polkit.enable = true;
+    environment.systemPackages = with pkgs; [ zenity libnotify xdg-utils ];
+
+Optional extras, by package name:
+
+| | `kdialog` (native dialogs on KDE) | AppIndicator tray (GNOME) |
+|---|---|---|
+| apt | `kdialog` | `gnome-shell-extension-appindicator` |
+| dnf | `kdialog` | `gnome-shell-extension-appindicator` |
+| pacman | `kdialog` | `gnome-shell-extension-appindicator` |
+| zypper | `kdialog` | `gnome-shell-extension-appindicator` |
+| Nix | `kdePackages.kdialog` | `gnomeExtensions.appindicator` |
+
+After installing the GNOME extension, enable it in the Extensions app and log out and back in. Ubuntu preinstalls it.
+
+Rust itself comes from [rustup](https://rustup.rs), since distro `rustc`/`cargo` packages are often older than the 1.89 required (Ubuntu 24.04 ships 1.75):
+
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
 ## Installation
 
 Pick one. All of them install `kiro-widget-rs`; the packages also add a start-menu entry and an `/etc/xdg/autostart/kiro-widget-rs.desktop` entry so it launches at login.
@@ -59,6 +106,8 @@ Download the `.deb` (attached to a GitHub release when a `v*` tag is pushed, and
     sudo dnf install ./kiro-widget-*.rpm
 
 ### From source
+
+Install the [build tools and Rust](#installing-the-system-dependencies) first.
 
     git clone https://github.com/PatiHox/kiro-widget.git
     cd kiro-widget/rust
