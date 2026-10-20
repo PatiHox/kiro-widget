@@ -1,8 +1,9 @@
 //! Kiro Crew widget (Rust port): a tray icon with controls for the kirocrew gateway.
 //!
-//! Same behaviour as `kiro_widget.py`. Everything goes through the `kirocrew` CLI, which is
-//! service-aware. Status is a cheap TCP probe of the dashboard port plus a /proc scan, so
-//! polling never spawns a process. Dialogs and notifications use `kdialog` / `notify-send`
+//! Everything goes through the `kirocrew` CLI, which is service-aware. Status is a cheap TCP
+//! probe of the dashboard port plus a /proc scan, so polling never spawns a process. The tray
+//! is a StatusNotifierItem (KDE, GNOME with the AppIndicator extension, XFCE's Status Tray,
+//! Cinnamon's XApp applet). Dialogs use `zenity` or `kdialog` and notifications `notify-send`
 //! instead of a GUI toolkit, which keeps the binary and its memory footprint small.
 
 use std::env;
@@ -12,6 +13,7 @@ use std::os::unix::process::CommandExt;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::sync::OnceLock;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -28,6 +30,8 @@ const RED: [u8; 3] = [0xf8, 0x51, 0x49];
 const AMBER: [u8; 3] = [0xd2, 0x99, 0x22];
 
 static HANDLE: OnceLock<Handle<Tray>> = OnceLock::new();
+/// False while no StatusNotifierWatcher (tray host) is on the session bus.
+static TRAY_HOST_UP: AtomicBool = AtomicBool::new(true);
 
 fn port() -> u16 {
     env::var("KIROCREW_PORT")
@@ -203,23 +207,91 @@ fn start() {
     });
 }
 
+#[derive(Clone, Copy, Debug, PartialEq)]
+enum Dialog {
+    Kdialog,
+    Zenity,
+}
+
+impl Dialog {
+    fn program(self) -> &'static str {
+        match self {
+            Dialog::Kdialog => "kdialog",
+            Dialog::Zenity => "zenity",
+        }
+    }
+}
+
+/// kdialog first on KDE, zenity first everywhere else (GNOME, XFCE and Cinnamon are all GTK).
+fn pick_dialog(desktop: &str, available: impl Fn(&str) -> bool) -> Option<Dialog> {
+    let kde = desktop.split(':').any(|d| d.eq_ignore_ascii_case("KDE"));
+    let order = if kde {
+        [Dialog::Kdialog, Dialog::Zenity]
+    } else {
+        [Dialog::Zenity, Dialog::Kdialog]
+    };
+    order.into_iter().find(|d| available(d.program()))
+}
+
+fn dialog() -> Option<Dialog> {
+    pick_dialog(&env::var("XDG_CURRENT_DESKTOP").unwrap_or_default(), has)
+}
+
+/// Ask a yes/no question. `None` means no dialog tool is installed.
+fn confirm(text: &str) -> Option<bool> {
+    let tool = dialog()?;
+    let mut cmd = Command::new(tool.program());
+    match tool {
+        Dialog::Kdialog => cmd.args(["--title", "Kiro Crew", "--yesno", text]),
+        Dialog::Zenity => cmd.args(["--question", "--title", "Kiro Crew", "--text", text]),
+    };
+    Some(cmd.status().map(|s| s.success()).unwrap_or(false))
+}
+
+/// Show a text file in a dialog, or hand it to the default app when no dialog tool exists.
+/// Returns true if the file can be deleted now (false when another app may still be reading it).
+fn show_text(title: &str, file: &Path) -> bool {
+    let Some(tool) = dialog() else {
+        let _ = Command::new("xdg-open")
+            .arg(file)
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status();
+        return false;
+    };
+    let mut cmd = Command::new(tool.program());
+    match tool {
+        Dialog::Kdialog => cmd
+            .args(["--title", title, "--textbox"])
+            .arg(file)
+            .args(["700", "450"]),
+        Dialog::Zenity => cmd
+            .args([
+                "--text-info",
+                "--title",
+                title,
+                "--width=700",
+                "--height=450",
+                "--filename",
+            ])
+            .arg(file),
+    };
+    let _ = cmd.status();
+    true
+}
+
 fn stop() {
     thread::spawn(|| {
         if !port_open() {
             return;
         }
-        let confirmed = Command::new("kdialog")
-            .args([
-                "--title",
-                "Kiro Crew",
-                "--yesno",
-                "Stop the gateway?\n\nThis interrupts running Kiro sessions.",
-            ])
-            .status()
-            .map(|s| s.success())
-            .unwrap_or(false);
-        if !confirmed {
-            return;
+        match confirm("Stop the gateway?\n\nThis interrupts running Kiro sessions.") {
+            Some(true) => {}
+            Some(false) => return,
+            None => {
+                notify("Install zenity or kdialog so Stop can ask for confirmation.");
+                return;
+            }
         }
         // The unit has Restart=always, so signalling the process (what `kirocrew stop` does for a
         // non-root user) just makes systemd bring it back. Only an explicit `systemctl stop` is
@@ -283,7 +355,7 @@ fn open_dashboard() {
     });
 }
 
-/// Run a CLI command and show its output in a kdialog text box.
+/// Run a CLI command and show its output in a dialog.
 fn show_cli(title: &'static str, args: &'static [&'static str]) {
     thread::spawn(move || {
         let mut text = format!("$ kirocrew {}\n", args.join(" "));
@@ -311,13 +383,8 @@ fn show_cli(title: &'static str, args: &'static [&'static str]) {
             std::process::id(),
             title.replace(' ', "_")
         ));
-        if fs::write(&file, text).is_ok() {
-            let _ = Command::new("kdialog")
-                .args(["--title", &format!("Kiro Crew · {title}"), "--textbox"])
-                .arg(&file)
-                .args(["700", "450"])
-                .status();
-            let _ = fs::remove_file(Path::new(&file));
+        if fs::write(&file, text).is_ok() && show_text(&format!("Kiro Crew · {title}"), &file) {
+            let _ = fs::remove_file(&file);
         }
     });
 }
@@ -400,6 +467,16 @@ impl ksni::Tray for Tray {
         }
     }
 
+    fn watcher_online(&self) {
+        TRAY_HOST_UP.store(true, Ordering::Relaxed);
+    }
+
+    // Keep running and wait: on GNOME, XFCE and Cinnamon the tray host can start after us.
+    fn watcher_offline(&self, _reason: ksni::OfflineReason) -> bool {
+        TRAY_HOST_UP.store(false, Ordering::Relaxed);
+        true
+    }
+
     fn menu(&self) -> Vec<MenuItem<Self>> {
         let idle = !self.busy;
         vec![
@@ -425,6 +502,22 @@ impl ksni::Tray for Tray {
             MenuItem::Separator,
             item("Quit widget", true, || std::process::exit(0)),
         ]
+    }
+}
+
+/// What to do when no StatusNotifier tray host showed up, per desktop.
+fn tray_hint(desktop: &str) -> &'static str {
+    let d = desktop.to_ascii_uppercase();
+    if d.contains("GNOME") || d.contains("UNITY") {
+        "No system tray found. Install and enable the \"AppIndicator and KStatusNotifierItem Support\" GNOME Shell extension."
+    } else if d.contains("XFCE") {
+        "No system tray found. Add the \"Status Tray Plugin\" to the Xfce panel."
+    } else if d.contains("CINNAMON") {
+        "No system tray found. Install xapp (xapp-sn-watcher) and add the \"XApp Status\" applet to the panel."
+    } else if d.contains("KDE") {
+        "No system tray found. Check that the System Tray widget is on the panel."
+    } else {
+        "No StatusNotifier tray found. Use a panel with StatusNotifierItem support (or run snixembed for XEmbed-only trays)."
     }
 }
 
@@ -458,7 +551,8 @@ fn main() {
         busy: false,
         status: "Checking…".into(),
     };
-    let handle = match tray.spawn() {
+    // assume_sni_available: don't bail out when the tray host isn't up yet (login race).
+    let handle = match tray.assume_sni_available(true).spawn() {
         Ok(h) => h,
         Err(e) => {
             eprintln!("Could not register the tray icon: {e}");
@@ -466,8 +560,62 @@ fn main() {
         }
     };
     let _ = HANDLE.set(handle);
+    thread::spawn(|| {
+        thread::sleep(Duration::from_secs(30));
+        if !TRAY_HOST_UP.load(Ordering::Relaxed) {
+            let hint = tray_hint(&env::var("XDG_CURRENT_DESKTOP").unwrap_or_default());
+            eprintln!("{hint}");
+            notify(hint);
+        }
+    });
     loop {
         refresh();
         thread::sleep(POLL);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn only(programs: &'static [&'static str]) -> impl Fn(&str) -> bool {
+        move |p| programs.contains(&p)
+    }
+
+    #[test]
+    fn kde_prefers_kdialog() {
+        assert_eq!(
+            pick_dialog("KDE", only(&["kdialog", "zenity"])),
+            Some(Dialog::Kdialog)
+        );
+    }
+
+    #[test]
+    fn gtk_desktops_prefer_zenity() {
+        for de in ["GNOME", "ubuntu:GNOME", "XFCE", "X-Cinnamon", ""] {
+            assert_eq!(
+                pick_dialog(de, only(&["kdialog", "zenity"])),
+                Some(Dialog::Zenity),
+                "{de}"
+            );
+        }
+    }
+
+    #[test]
+    fn falls_back_to_whatever_is_installed() {
+        assert_eq!(pick_dialog("KDE", only(&["zenity"])), Some(Dialog::Zenity));
+        assert_eq!(
+            pick_dialog("GNOME", only(&["kdialog"])),
+            Some(Dialog::Kdialog)
+        );
+        assert_eq!(pick_dialog("GNOME", only(&[])), None);
+    }
+
+    #[test]
+    fn every_target_desktop_has_a_specific_tray_hint() {
+        let generic = tray_hint("");
+        for de in ["GNOME", "XFCE", "X-Cinnamon", "KDE"] {
+            assert_ne!(tray_hint(de), generic, "{de}");
+        }
     }
 }
