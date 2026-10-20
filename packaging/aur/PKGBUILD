@@ -1,7 +1,7 @@
 # Maintainer: Yevhenii Terentiev <123j123t@gmail.com>
 
 pkgname=kiro-widget-git
-pkgver=r0.0000000
+pkgver=r11.f334f5a
 pkgrel=1
 pkgdesc='System tray widget to start, stop and inspect the Kiro Crew (kirocrew) gateway'
 arch=('x86_64')

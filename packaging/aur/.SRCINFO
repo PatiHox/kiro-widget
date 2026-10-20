@@ -1,6 +1,6 @@
 pkgbase = kiro-widget-git
 	pkgdesc = System tray widget to start, stop and inspect the Kiro Crew (kirocrew) gateway
-	pkgver = r0.0000000
+	pkgver = r11.f334f5a
 	pkgrel = 1
 	url = https://github.com/PatiHox/kiro-widget
 	arch = x86_64
