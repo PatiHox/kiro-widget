@@ -19,6 +19,8 @@ use std::time::{Duration, Instant};
 
 use ksni::blocking::{Handle, TrayMethods};
 use ksni::menu::{MenuItem, StandardItem};
+use resvg::tiny_skia::{Pixmap, Transform};
+use resvg::usvg;
 
 const POLL: Duration = Duration::from_secs(3);
 const UNIT: &str = "kirocrew.service";
@@ -396,13 +398,14 @@ struct Tray {
 }
 
 impl Tray {
-    fn color(&self) -> [u8; 3] {
+    /// Icon colour, and whether the ghost has its eyes shut (the gateway is stopped).
+    fn look(&self) -> ([u8; 3], bool) {
         if self.busy {
-            AMBER
+            (AMBER, false)
         } else if self.running {
-            KIRO
+            (KIRO, false)
         } else {
-            RED
+            (RED, true)
         }
     }
 
@@ -415,21 +418,39 @@ impl Tray {
     }
 }
 
-/// A filled, antialiased circle as an ARGB32 icon.
-fn dot(color: [u8; 3]) -> ksni::Icon {
-    const N: i32 = 32;
-    let mut data = Vec::with_capacity((N * N * 4) as usize);
-    let (c, r) = (N as f32 / 2.0, N as f32 * 0.375);
-    for y in 0..N {
-        for x in 0..N {
-            let d = ((x as f32 + 0.5 - c).powi(2) + (y as f32 + 0.5 - c).powi(2)).sqrt();
-            let alpha = ((r - d + 0.5).clamp(0.0, 1.0) * 255.0) as u8;
-            data.extend_from_slice(&[alpha, color[0], color[1], color[2]]);
-        }
-    }
+/// The ghost from Scarlab Icons (MIT, see THIRD_PARTY_NOTICES.md), adapted into a filled body
+/// with the face cut out; the asleep variant has its eyes shut. Their only colour is `GHOST_INK`.
+const GHOST_AWAKE: &str = include_str!("../assets/ghost.svg");
+const GHOST_ASLEEP: &str = include_str!("../assets/ghost-asleep.svg");
+const GHOST_INK: &str = "#323232";
+
+/// The tray icon as an ARGB32 pixmap: the ghost drawn in the status colour.
+fn ghost(color: [u8; 3], asleep: bool) -> ksni::Icon {
+    const N: u32 = 32;
+    let ink = format!("#{:02x}{:02x}{:02x}", color[0], color[1], color[2]);
+    let svg = if asleep { GHOST_ASLEEP } else { GHOST_AWAKE }.replace(GHOST_INK, &ink);
+    let tree = usvg::Tree::from_str(&svg, &usvg::Options::default())
+        .expect("assets/ghost*.svg are valid SVG");
+    let scale = N as f32 / tree.size().width();
+    let mut pixmap = Pixmap::new(N, N).expect("icon size is non-zero");
+    resvg::render(
+        &tree,
+        Transform::from_scale(scale, scale),
+        &mut pixmap.as_mut(),
+    );
+
+    // SNI wants straight (non-premultiplied) ARGB, tiny-skia stores premultiplied RGBA.
+    let data = pixmap
+        .pixels()
+        .iter()
+        .flat_map(|p| {
+            let c = p.demultiply();
+            [c.alpha(), c.red(), c.green(), c.blue()]
+        })
+        .collect();
     ksni::Icon {
-        width: N,
-        height: N,
+        width: N as i32,
+        height: N as i32,
         data,
     }
 }
@@ -457,7 +478,8 @@ impl ksni::Tray for Tray {
     }
 
     fn icon_pixmap(&self) -> Vec<ksni::Icon> {
-        vec![dot(self.color())]
+        let (color, asleep) = self.look();
+        vec![ghost(color, asleep)]
     }
 
     fn tool_tip(&self) -> ksni::ToolTip {
@@ -609,6 +631,43 @@ mod tests {
             Some(Dialog::Kdialog)
         );
         assert_eq!(pick_dialog("GNOME", only(&[])), None);
+    }
+
+    #[test]
+    fn ghost_is_drawn_in_the_status_colour() {
+        let icon = ghost(KIRO, false);
+        assert_eq!((icon.width, icon.height), (32, 32));
+        assert_eq!(icon.data.len(), 32 * 32 * 4);
+        let px = |x: usize, y: usize| icon.data[(y * 32 + x) * 4..][..4].to_vec();
+        // The body is opaque in the status colour, the corner is empty and the eye is cut out.
+        assert_eq!(px(4, 16), [0xff, KIRO[0], KIRO[1], KIRO[2]]);
+        assert_eq!(px(0, 0)[0], 0);
+        assert_eq!(px(12, 13)[0], 0);
+        assert_ne!(ghost(RED, false).data, icon.data);
+    }
+
+    #[test]
+    fn asleep_ghost_has_its_eyes_shut() {
+        // Just below an open eye the body is solid; a shut eye is an arc that dips into it.
+        let alpha = |icon: ksni::Icon| icon.data[(15 * 32 + 12) * 4];
+        assert_eq!(alpha(ghost(RED, false)), 0xff);
+        assert!(alpha(ghost(RED, true)) < 0x20);
+    }
+
+    #[test]
+    fn only_a_stopped_gateway_sleeps() {
+        let look = |running, busy| {
+            Tray {
+                running,
+                busy,
+                status: String::new(),
+            }
+            .look()
+        };
+        assert_eq!(look(false, false), (RED, true));
+        assert_eq!(look(true, false), (KIRO, false));
+        assert_eq!(look(true, true), (AMBER, false));
+        assert_eq!(look(false, true), (AMBER, false));
     }
 
     #[test]
