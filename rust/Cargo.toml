@@ -12,8 +12,13 @@ readme = "../README.md"
 ksni = { version = "0.3.7", features = ["blocking"] }
 resvg = { version = "0.48.1", default-features = false }
 
+# Size-tuned: the widget idles in the tray all day, so resident memory matters more than speed.
 [profile.release]
 strip = true
+opt-level = "z"
+lto = "fat"
+codegen-units = 1
+panic = "abort"
 
 [package.metadata.deb]
 name = "kiro-widget"

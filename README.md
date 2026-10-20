@@ -6,6 +6,7 @@ Tray widget for the Kiro Crew gateway (Rust, [`ksni`](https://crates.io/crates/k
 - **Start** / **Stop** (Stop asks first; it interrupts running Kiro sessions)
 - **Go aboard** opens the dashboard (uses `kirocrew token`; the token URL is never displayed)
 - Logs, Doctor, Cron jobs, Subagents (output opens in a dialog)
+- Lightweight: a 2.3 MB binary that idles at about 5 MB of RAM
 
 Start and Stop go through `pkexec systemctl start|stop kirocrew.service` when that unit exists (the unit has `Restart=always`, so only an explicit `systemctl stop` keeps it down), else a detached `kirocrew gateway --no-open` / `kirocrew stop`.
 Only one instance runs at a time (lock in `$XDG_RUNTIME_DIR`).
