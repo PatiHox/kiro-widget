@@ -6,6 +6,7 @@ Tray widget for the Kiro Crew gateway (Rust, [`ksni`](https://crates.io/crates/k
 - **Start** / **Stop** (Stop asks first; it interrupts running Kiro sessions)
 - **Go aboard** opens the dashboard (uses `kirocrew token`; the token URL is never displayed)
 - Logs, Doctor, Cron jobs, Subagents (output opens in a dialog)
+- Lightweight: a 2.3 MB binary that idles at about 5 MB of RAM
 
 Start and Stop go through `pkexec systemctl start|stop kirocrew.service` when that unit exists (the unit has `Restart=always`, so only an explicit `systemctl stop` keeps it down), else a detached `kirocrew gateway --no-open` / `kirocrew stop`.
 Only one instance runs at a time (lock in `$XDG_RUNTIME_DIR`).
@@ -40,19 +41,6 @@ The tray is a StatusNotifierItem over the D-Bus session bus (`dbus-broker` and `
 If the tray host starts after the widget (common at login), the widget waits and registers when it appears. If none shows up within 30 seconds it sends a desktop-specific hint. Bare X11 window managers with an XEmbed-only tray need a proxy such as `snixembed`.
 
 What is verified: the no-host and late-host cases and the dialog command shapes were exercised on a private D-Bus session, and dialog selection has unit tests. The GNOME, Xfce and Cinnamon rows have not been run on those desktops.
-
-## Footprint
-
-The release profile is tuned for size (`opt-level = "z"`, fat LTO, one codegen unit, `panic = "abort"`). Measured idle on a private D-Bus session, binary run from disk:
-
-| | default profile | now |
-|---|---|---|
-| Binary | 5.65 MB | 2.32 MB |
-| RSS | 7.5 MB | 4.7 MB |
-| PSS | 5.2 MB | 2.4 MB |
-| Private (anonymous) memory | 544 kB | 460 kB |
-
-RSS counts shared library pages and the binary's own file pages, so it cannot go below a couple of MB for any process (a bare `sleep` shows 2.8 MB). Private memory is the widget's real cost. Tried and dropped (measured before the ghost icon was added): `ksni`'s `async-io` runtime (no gain, more threads) and a non-PIE build (about 70 kB for lost hardening).
 
 ## Build and run
 
