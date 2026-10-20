@@ -2,7 +2,7 @@
 
 Tray widget for the Kiro Crew gateway (Rust, [`ksni`](https://crates.io/crates/ksni) over D-Bus). Click the tray dot for the menu.
 
-- Live status (green = running, red = stopped, amber = working): port probe on 5476 (`KIROCREW_PORT` to override), PID and uptime
+- Live status (Kiro purple = running, red = stopped, amber = working): port probe on 5476 (`KIROCREW_PORT` to override), PID and uptime
 - **Start** / **Stop** (Stop asks first; it interrupts running Kiro sessions)
 - **Go aboard** opens the dashboard (uses `kirocrew token`; the token URL is never displayed)
 - Logs, Doctor, Cron jobs, Subagents (output opens in a `kdialog` text box)

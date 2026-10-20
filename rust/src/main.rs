@@ -23,7 +23,7 @@ const UNIT: &str = "kirocrew.service";
 /// USER_HZ is 100 on every mainstream Linux build; avoids a libc dependency.
 const CLK_TCK: f64 = 100.0;
 
-const GREEN: [u8; 3] = [0x3f, 0xb9, 0x50];
+const KIRO: [u8; 3] = [0x90, 0x46, 0xff];
 const RED: [u8; 3] = [0xf8, 0x51, 0x49];
 const AMBER: [u8; 3] = [0xd2, 0x99, 0x22];
 
@@ -333,7 +333,7 @@ impl Tray {
         if self.busy {
             AMBER
         } else if self.running {
-            GREEN
+            KIRO
         } else {
             RED
         }
