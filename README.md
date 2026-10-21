@@ -139,6 +139,26 @@ What is verified: the no-host and late-host cases and the dialog command shapes 
 
 CI (`.github/workflows/ci.yml`) runs fmt, clippy, the build and both packagers on every push and PR and uploads the packages as artifacts. Pushing a `v*` tag also attaches them to a GitHub release. Dependabot (`.github/dependabot.yml`) opens weekly grouped updates for Cargo dependencies and GitHub Actions.
 
+## Versioning and releases
+
+Versions follow [Semantic Versioning](https://semver.org) and start at 0.0.1. Notable changes are logged in [CHANGELOG.md](CHANGELOG.md), in [Keep a Changelog](https://keepachangelog.com) format.
+
+The public interface is the tray menu and its behaviour, the environment variables (`KIROCREW_PORT`), the `kirocrew` commands the widget calls, and what the packages install (binary name, desktop and autostart entries).
+
+- **MAJOR**: a breaking change to that interface, such as removing or renaming an environment variable, renaming the binary or its installed paths, or dropping a supported desktop or `kirocrew` version.
+- **MINOR**: new menu entries or features, a newly supported desktop, a raised minimum Rust version.
+- **PATCH**: bug fixes, dependency updates, packaging and docs fixes.
+
+Before 1.0.0 (`0.y.z`) the interface may change at any time: a breaking change bumps MINOR, everything else bumps PATCH. 1.0.0 is cut once the interface above is considered stable.
+
+To cut a release:
+
+1. Add a changelog line under `[Unreleased]` with every user-visible change as you make it. For a release, move those lines under a new `## [X.Y.Z] - YYYY-MM-DD` heading and update the links at the bottom of `CHANGELOG.md`.
+2. Set `version` in `rust/Cargo.toml` and refresh the lock file with `cargo check` in `rust/`.
+3. Commit, then `git tag vX.Y.Z && git push origin vX.Y.Z`. CI attaches the `.deb` and `.rpm` to a GitHub release.
+
+The `.deb` and `.rpm` take their version from `rust/Cargo.toml`, not from the tag, so keep the two in step. The Arch and AUR packages version themselves from git (`r<commit count>.<hash>`) and ignore this number.
+
 ## License
 
 MIT, see `LICENSE`.
