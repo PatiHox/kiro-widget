@@ -17,26 +17,24 @@ Only one instance runs at a time (lock in `$XDG_RUNTIME_DIR`).
 
 - Linux with a D-Bus session bus. The widget is Linux-only (StatusNotifier over D-Bus, `systemctl`, `pkexec`, `/proc`).
 - Kiro Crew (the `kirocrew` CLI), installed separately. The widget looks for it on `PATH`, then in `~/.local/bin/kirocrew`.
-- A StatusNotifier tray host (built in on KDE Plasma; an extension or applet on other desktops, see [Supported desktops](#supported-desktops)).
-- `zenity` or `kdialog` for dialogs.
+- A StatusNotifier tray host. Built in on KDE Plasma. GNOME needs the AppIndicator extension (`gnome-shell-extension-appindicator`; Nix: `gnomeExtensions.appindicator`), which you enable in the Extensions app before logging out and back in (Ubuntu preinstalls it). Other desktops: see [Supported desktops](#supported-desktops).
+- `zenity` or `kdialog` for dialogs (`kdialog` is the native choice on KDE; Nix: `kdePackages.kdialog`).
 - `notify-send` (`libnotify`) for notifications.
 - `xdg-open` (`xdg-utils`) to open the dashboard.
 - `pkexec` (`polkit`) with an authentication agent running, for Start and Stop.
 - `systemd` is optional: it is only needed to manage the `kirocrew.service` unit. Without it the widget falls back to a detached `kirocrew gateway --no-open` / `kirocrew stop`.
 
-The distro packages below pull in the dependencies they can express: `zenity` (or `kdialog` on Debian), `libnotify`, `polkit` and `xdg-utils`. The tray host and `kirocrew` are not packaged dependencies.
-
 **Building from source** (the From source route and building packages yourself; the Arch recipes pull in `cargo` on their own)
 
-- Rust 1.89 or newer (stable) with `cargo`. The crate uses edition 2024 (Rust 1.85+) and the locked dependencies need 1.89. CI builds on the latest stable.
+- Rust 1.89 or newer (stable) with `cargo`. The crate uses edition 2024 (Rust 1.85+) and the locked dependencies need 1.89. CI builds on the latest stable. Distro `rustc` is often older (Ubuntu 24.04 ships 1.75), so use [rustup](https://rustup.rs).
 - A C linker (`gcc` or `cc`).
 - Optional, to build packages: [`cargo-deb`](https://crates.io/crates/cargo-deb), [`cargo-generate-rpm`](https://crates.io/crates/cargo-generate-rpm), or `makepkg` (`base-devel`) on Arch.
-
-Install commands for apt, dnf, pacman, zypper and NixOS (runtime tools, build tools, optional extras, and Rust via rustup) are in [DEPENDENCIES.md](DEPENDENCIES.md).
 
 ## Installation
 
 Pick one. All of them install `kiro-widget-rs`; the packages also add a start-menu entry and an `/etc/xdg/autostart/kiro-widget-rs.desktop` entry so it launches at login.
+
+The packages pull in the runtime tools they can express: `zenity` (or `kdialog` on Debian), `libnotify`, `polkit` and `xdg-utils`. The tray host and `kirocrew` are not packaged dependencies, so install those yourself (see [Requirements](#requirements)).
 
 ### Arch Linux
 
@@ -62,7 +60,33 @@ Download the `.deb` (attached to a GitHub release when a `v*` tag is pushed, and
 
 ### From source
 
-Install the [build tools and Rust](DEPENDENCIES.md) first.
+Install the dependencies first. In each pair the first line is the runtime tools and the second is the build tools:
+
+    # Debian / Ubuntu (no pkexec package on your release? use policykit-1)
+    sudo apt install zenity libnotify-bin xdg-utils pkexec
+    sudo apt install build-essential curl
+
+    # Fedora
+    sudo dnf install zenity libnotify xdg-utils polkit
+    sudo dnf install gcc curl
+
+    # Arch Linux
+    sudo pacman -S zenity libnotify xdg-utils polkit
+    sudo pacman -S base-devel curl
+
+    # openSUSE
+    sudo zypper install zenity libnotify-tools xdg-utils polkit
+    sudo zypper install gcc curl
+
+    # NixOS, in configuration.nix (runtime tools only; the module provides the setuid pkexec wrapper)
+    security.polkit.enable = true;
+    environment.systemPackages = with pkgs; [ zenity libnotify xdg-utils ];
+
+Then Rust:
+
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+Then build and run:
 
     git clone https://github.com/PatiHox/kiro-widget.git
     cd kiro-widget/rust
