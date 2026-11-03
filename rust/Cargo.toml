@@ -10,7 +10,7 @@ readme = "../README.md"
 
 [dependencies]
 ksni = { version = "0.3.7", features = ["blocking"] }
-resvg = { version = "0.48.1", default-features = false }
+resvg = { version = "0.49.0", default-features = false }
 
 # Size-tuned: the widget idles in the tray all day, so resident memory matters more than speed.
 [profile.release]
